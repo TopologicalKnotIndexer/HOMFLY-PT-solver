@@ -4,3 +4,6 @@
 [submodule "src/pd_code_de_r1_k8"]
 	path = src/pd_code_de_r1_k8
 	url = https://github.com/TopologicalKnotIndexer/pd_code_de_r1_k8
+[submodule "src/pd_code_input_sanity"]
+	path = src/pd_code_input_sanity
+	url = git@github.com:TopologicalKnotIndexer/pd_code_input_sanity.git

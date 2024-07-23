@@ -4,7 +4,6 @@
 import sys
 from de_r1_k8           import de_r1_k8
 from sage_run_interface import sage_run
-from input_sanity       import input_sanity
 
 CODE_TEMPLATE = """
 from sage.all import *
@@ -17,7 +16,6 @@ print(K.homfly_polynomial())
 
 # 根据 PD_CODE 计算镜像扭结的 homflypt 多项式
 def homflypt_solver(pd_code: list) -> str:
-    assert input_sanity(pd_code)
     pd_code   = de_r1_k8(pd_code)
     sage_code = CODE_TEMPLATE.replace("<<<PD_CODE>>>", str(pd_code))
     exit_code, stdout_ans, stderr_ans = sage_run(sage_code)
