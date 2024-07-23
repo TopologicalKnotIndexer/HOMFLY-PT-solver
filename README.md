@@ -5,7 +5,7 @@
 
 ## 前置条件
 
-- 确保处理器架构为 `x86_64`
+- `sage` https://github.com/sagemath/sage
 - `python3`
 
 
