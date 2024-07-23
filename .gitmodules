@@ -1,0 +1,6 @@
+[submodule "src/x86_64-sage-minimal"]
+	path = src/x86_64-sage-minimal
+	url = https://github.com/TopologicalKnotIndexer/x86_64-sage-minimal
+[submodule "src/pd_code_de_r1_k8"]
+	path = src/pd_code_de_r1_k8
+	url = https://github.com/TopologicalKnotIndexer/pd_code_de_r1_k8
