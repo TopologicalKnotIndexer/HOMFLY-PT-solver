@@ -1,27 +1,41 @@
-# 桥接：https://github.com/TopologicalKnotIndexer/x86_64-sage-minimal
+"""Execute generated Python source with an installed SageMath command."""
+
+from pathlib import Path
 import os
-DIRNOW = os.path.dirname(os.path.abspath(__file__))
-SUBDIR = os.path.join(DIRNOW, "x86_64-sage-minimal", "src") # 子包路径
+import shutil
+import subprocess
 
-# ======================================== BEGIN IMPORT FROM PATH ======================================== #
-import importlib
-import json
-import sys
-def load_module_from_path(path: str, mod_name: str): # 从指定路径导入一个包
-    assert os.path.isdir(path)                       # 路径必须存在
-    path         = os.path.abspath(path)             # 获得绝对路径
-    old_sys_path = json.loads(json.dumps(sys.path))  # 存档旧的 sys.path
-    sys.path     = [path] + sys.path                 # 将新的路径加入 sys.path
-    mod          = importlib.import_module(mod_name) # 加载指定的包
-    sys.path     = old_sys_path                      # 恢复旧的 sys.path
-    return mod
-# ======================================== END IMPORT FROM PATH ======================================== #
 
-def sage_run(sage_code:str) -> tuple[int, str, str]:
-    mod = load_module_from_path(SUBDIR, "sage_run")
-    # print(mod.__dict__)
-    return mod.sage_run(sage_code)
+def _find_sage(explicit: str | os.PathLike[str] | None = None) -> str:
+    candidate = os.fspath(explicit) if explicit is not None else "sage"
+    resolved = shutil.which(candidate)
+    if resolved:
+        return resolved
+    path = Path(candidate)
+    if path.is_file():
+        return str(path.resolve())
+    raise FileNotFoundError(
+        f"SageMath executable not found: {candidate}; install SageMath, put "
+        "'sage' on PATH, or pass sage_path"
+    )
 
-if __name__ == "__main__": # 测试
-    SAMPLE_CODE = load_module_from_path(SUBDIR, "sage_run").SAMPLE_CODE
-    print(sage_run(SAMPLE_CODE))
+
+def sage_run(
+    sage_code: str,
+    sage_path: str | os.PathLike[str] | None = None,
+    timeout: float | None = None,
+) -> tuple[int, str, str]:
+    """Run *sage_code* and return ``(exit_code, stdout, stderr)``."""
+
+    if not isinstance(sage_code, str):
+        raise TypeError("sage_code must be a string")
+    completed = subprocess.run(
+        [_find_sage(sage_path), "-c", sage_code],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=timeout,
+        check=False,
+    )
+    return completed.returncode, completed.stdout, completed.stderr

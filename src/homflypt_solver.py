@@ -1,31 +1,59 @@
-# 给定扭结的 PD_CODE，计算扭结的 HOMFLY_PT 多项式
-# 需要注意的是，HOMFLYPT 多项式的计算在计算 crossing 数很多的扭结时可能会崩溃
+"""Compute the mirror-image HOMFLY-PT polynomial of a knot PD code."""
 
-import sys
-from de_r1_k8           import de_r1_k8
+from os import PathLike
+
+from de_r1_k8 import de_r1_k8
+from input_sanity import input_sanity
 from sage_run_interface import sage_run
-from input_sanity       import input_sanity
 
-CODE_TEMPLATE = """
-from sage.all import *
-K = Knot(<<<PD_CODE>>>) # Knot PD_CODE
-K3a1 = Knot([[1, 5, 2, 4], [3, 1, 4, 6], [5, 3, 6, 2]])
-if str(K3a1.homfly_polynomial()).strip() == "L^-2*M^2 - 2*L^-2 - L^-4":
-    K = K.mirror_image()
-print(K.homfly_polynomial())
+
+_REFERENCE_POLYNOMIAL = "L^-2*M^2 - 2*L^-2 - L^-4"
+_TREFOIL = [[1, 5, 2, 4], [3, 1, 4, 6], [5, 3, 6, 2]]
+
+
+def _build_sage_code(pd_code: list[list[int]]) -> str:
+    """Build injection-safe Sage source from an already validated PD code."""
+
+    return f"""from sage.all import Knot
+diagram = Knot({pd_code!r})
+reference = Knot({_TREFOIL!r})
+if str(reference.homfly_polynomial()).strip() == {_REFERENCE_POLYNOMIAL!r}:
+    diagram = diagram.mirror_image()
+print(diagram.homfly_polynomial())
 """
 
-# 根据 PD_CODE 计算镜像扭结的 homflypt 多项式
-# input_pdcode 可以为字符串或者 list of list
-def homflypt_solver(input_pdcode) -> str:
-    pd_code   = input_sanity(str(input_pdcode)) # 检查是否是合法的 PD_CODE
-    pd_code   = de_r1_k8(pd_code)
-    sage_code = CODE_TEMPLATE.replace("<<<PD_CODE>>>", str(pd_code))
-    exit_code, stdout_ans, stderr_ans = sage_run(sage_code)
-    if exit_code != 0:
-        sys.stderr.write(stderr_ans)                     # 输出错误信息
-        raise AssertionError("sage_run: exit_code != 0") # 抛出异常
-    return stdout_ans.strip()                            # 保证首尾没有空白字符
 
-if __name__ == "__main__": # 测试
-    print(homflypt_solver([[1, 5, 2, 4], [3, 7, 4, 6], [5, 3, 6, 2], [7, 10, 8, 11], [9, 12, 10, 1], [11, 8, 12, 9]]))
+def homflypt_solver(
+    input_pdcode: str | list[list[int]],
+    *,
+    sage_path: str | PathLike[str] | None = None,
+    timeout: float | None = None,
+) -> str:
+    """Return the catalog-compatible mirror-image HOMFLY-PT polynomial.
+
+    The reference trefoil check compensates for Sage releases whose PD-code
+    orientation convention is the mirror of the convention used by this
+    organization's polynomial catalog.
+    """
+
+    pd_code = de_r1_k8(input_sanity(input_pdcode))
+    if not pd_code:
+        return "1"
+    exit_code, stdout, stderr = sage_run(
+        _build_sage_code(pd_code), sage_path=sage_path, timeout=timeout
+    )
+    if exit_code != 0:
+        detail = stderr.strip() or "SageMath produced no diagnostic output"
+        raise RuntimeError(f"SageMath failed with exit code {exit_code}: {detail}")
+    result = stdout.strip()
+    if not result:
+        raise RuntimeError("SageMath returned an empty HOMFLY-PT polynomial")
+    return result
+
+
+if __name__ == "__main__":
+    trefoil_sum = [
+        [1, 5, 2, 4], [3, 7, 4, 6], [5, 3, 6, 2],
+        [7, 10, 8, 11], [9, 12, 10, 1], [11, 8, 12, 9],
+    ]
+    print(homflypt_solver(trefoil_sum))
