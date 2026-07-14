@@ -69,3 +69,16 @@ python -m unittest discover -s tests -v
 
 Run each bundled dependency's tests from its own directory when refreshing a
 snapshot. No PyPI publication is performed as part of repository maintenance.
+
+## Citation
+
+If you use this repository in academic work, please cite it as:
+
+```bibtex
+@software{topologicalknotindexer_homfly_pt_solver,
+  author = {{TopologicalKnotIndexer contributors}},
+  title = {{HOMFLY-PT-solver}},
+  year = {2026},
+  url = {https://github.com/TopologicalKnotIndexer/HOMFLY-PT-solver}
+}
+```
